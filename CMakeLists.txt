@@ -86,7 +86,6 @@ SET(EXT_SRCS ${PROJECT_BINARY_DIR}/extint.cpp ${UPSTREAM_DIR}/extensions/ext.cpp
 
 SET(EXTENSIONS
     ALE_2G
-    ant_switch
     colormap
     CW_decoder
     CW_skimmer
@@ -312,6 +311,8 @@ file(GLOB_RECURSE FILES_EMBED_JS RELATIVE ${UPSTREAM_DIR}/web
     ${UPSTREAM_DIR}/web/kiwi/admin_sdr.js
     ${UPSTREAM_DIR}/web/kiwi/mfg.js
     ${UPSTREAM_DIR}/web/kiwi/kiwi_js_load.js
+
+    ${UPSTREAM_DIR}/web/kiwi/ant_switch.js
 
     ${UPSTREAM_DIR}/web/pkgs/js/*.js
     ${UPSTREAM_DIR}/web/pkgs/js/*/*.js
