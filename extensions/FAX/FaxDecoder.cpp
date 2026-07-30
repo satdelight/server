@@ -40,7 +40,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define FAX_PRINTF
+//#define FAX_PRINTF
 #ifdef FAX_PRINTF
 	#define faxprintf(fmt, ...) \
 		rcprintf(m_rx_chan, fmt, ## __VA_ARGS__)
