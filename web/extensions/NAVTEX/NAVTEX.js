@@ -759,7 +759,7 @@ function navtex_show_cb(path, idx, first)
 	if (idx == nt.SHOW_SPLIT)
 	   w3_scrollDown('id-navtex-console-msg');
 	if (idx != nt.SHOW_MSGS)
-      navtex_output("\nMap only displays Selcall beacon locations (e.g. not DSC)");
+      navtex_output("\nMap only displays Selcall beacon locations (e.g. not DSC)\n");
 }
 
 function navtex_day_night_visible_cb(path, checked, first)
