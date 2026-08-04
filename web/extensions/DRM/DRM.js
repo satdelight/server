@@ -310,12 +310,14 @@ function drm_recv(data)
             drm_all_status(o.io, o.time, o.frame, o.FAC, o.SDC, o.MSC);
 
             // server sends "epg":iEPGService (-1 = no EPG service in SDC, >= 0 = present)
+            // LED on only if an EPG service is announced AND at least one data
+            // service is active (D >= 1); avoids false green on signaling-only mux
             if (isDefined(o.epg)) {
                if (drm.last_epg != o.epg) {
                   drm.last_epg = o.epg;
                   console.log('drm EPG service='+ o.epg);
                }
-               drm_status('program', (o.epg >= 0)? drm.ST_GRN : drm.ST_GRY);
+               drm_status('program', (o.epg >= 0 && o.nds >= 1)? drm.ST_GRN : drm.ST_GRY);
             }
 
 			   w3_innerHTML('id-drm-if_level', 'IF Level: '+ o.if.toFixed(1) +' dB');
