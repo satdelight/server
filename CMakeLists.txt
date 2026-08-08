@@ -9,6 +9,7 @@ find_program(MINIFY_COMMAND NAMES minify)
 
 option(ZYNQ "Build for Zynq7000 serial based WebSDR" ON)
 option(ENABLE_HDFL "Enable HFDL" ON)
+option(ENABLE_VHF_ACARS "Enable VHF ACARS" ON)
 
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE Release)
@@ -47,6 +48,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch
 else()
     set(PLATFORM_FLAGS -ffast-math)
     set(ENABLE_HDFL OFF)
+    set(ENABLE_VHF_ACARS OFF)
     SET(EMULATOR ON)
 endif()
 
@@ -80,6 +82,43 @@ if(ENABLE_HDFL)
 
     add_subdirectory(${UPSTREAM_DIR}/externals/dumphfdl)
 endif(ENABLE_HDFL)
+
+if(ENABLE_VHF_ACARS)
+    ## VHF ACARS external dependency
+
+    # libsndfile: static build (no shared libs on the SDR), no external codecs,
+    # no programs/examples/tests to keep the QEMU build short
+    set(ENABLE_EXTERNAL_LIBS OFF CACHE BOOL "libsndfile: no FLAC/Vorbis/Opus" FORCE)
+    set(ENABLE_MPEG OFF CACHE BOOL "libsndfile: no MPEG" FORCE)
+    set(BUILD_PROGRAMS OFF CACHE BOOL "libsndfile: no programs" FORCE)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "libsndfile: no examples" FORCE)
+    set(BUILD_TESTING OFF CACHE BOOL "libsndfile: no tests" FORCE)
+    set(ENABLE_CPACK OFF CACHE BOOL "libsndfile: no CPack" FORCE)
+
+    add_subdirectory(${UPSTREAM_DIR}/externals/libsndfile)
+
+    # point acarsdec at the libsndfile we just built (static .a + headers)
+    set(LIBSNDFILE "${CMAKE_CURRENT_BINARY_DIR}/externals/libsndfile/libsndfile.a" CACHE FILEPATH "libsndfile built by submodule" FORCE)
+    set(LIBSNDFILE_INCPATH "${UPSTREAM_DIR}/externals/libsndfile/include" CACHE PATH "libsndfile headers from submodule" FORCE)
+
+    # acarsdec: only the libsndfile input is needed (static build for the SDR)
+    set(CJSON OFF CACHE BOOL "acarsdec: disable CJSON" FORCE)
+    set(ALSA OFF CACHE BOOL "acarsdec: disable ALSA" FORCE)
+    set(LIBACARS OFF CACHE BOOL "acarsdec: disable libacars" FORCE)
+    set(SNDFILE ON CACHE BOOL "acarsdec: enable libsndfile" FORCE)
+    set(RTLSDR OFF CACHE BOOL "acarsdec: disable RTL-SDR" FORCE)
+    set(AIRSPY OFF CACHE BOOL "acarsdec: disable Airspy" FORCE)
+    set(SDRPLAY OFF CACHE BOOL "acarsdec: disable SDRplay" FORCE)
+    set(SOAPYSDR OFF CACHE BOOL "acarsdec: disable SoapySDR" FORCE)
+
+    add_subdirectory(${UPSTREAM_DIR}/externals/acarsdec)
+
+    # build libsndfile before linking acarsdec against it
+    add_dependencies(acarsdec sndfile)
+
+    # statically link the decoder (no dynamic libs on the SDR)
+    target_link_options(acarsdec PRIVATE -static)
+endif(ENABLE_VHF_ACARS)
 ###########################################################
 
 SET(EXT_SRCS ${PROJECT_BINARY_DIR}/extint.cpp ${UPSTREAM_DIR}/extensions/ext.cpp)
@@ -118,13 +157,16 @@ endif(ENABLE_HDFL)
 
 list(SORT EXTENSIONS)
 
+# vhf_acars stays last in the extension list: append it after the sort
+list(APPEND EXTENSIONS vhf_acars)
+
 SET(GEN_EXT_MAIN "// auto-generated file -- do not edit by hand\n")
 STRING(APPEND GEN_EXT_MAIN "void extint_init() {\n")
 
 if(${CMAKE_C_COMPILER} MATCHES "clang")
-    set(EXT_DEFINITIONS USE_CONSOLEIO USE_KIWI HFDL)
+    set(EXT_DEFINITIONS USE_CONSOLEIO USE_KIWI HFDL ACARS)
 else()
-    set(EXT_DEFINITIONS USE_CONSOLEIO USE_KIWI __UINT64_FMTx__="lld" HFDL)
+    set(EXT_DEFINITIONS USE_CONSOLEIO USE_KIWI __UINT64_FMTx__="lld" HFDL ACARS)
 endif()
 
 set(EXT_INCLUDES
@@ -244,6 +286,10 @@ target_link_libraries(websdr.bin PRIVATE
 if(ENABLE_HDFL)
     add_dependencies(websdr.bin dumphfdl)
 endif(ENABLE_HDFL)
+
+if(ENABLE_VHF_ACARS)
+    add_dependencies(websdr.bin acarsdec)
+endif(ENABLE_VHF_ACARS)
 
 cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
 string(TIMESTAMP CURRENT_YEAR "%Y")
