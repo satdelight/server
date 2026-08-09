@@ -8082,7 +8082,13 @@ function dx_label_render_cb(arr)
             lock_z = 0;
          }
 		}
-		var top = dx_label_top + (gap * (dx_idx & 1));    // stagger the labels vertically
+		// stagger the labels vertically
+		var top;
+		if (!eibi && cfg.dx_three_high) {
+		   top = 26 * (dx_idx % 3);
+		} else {
+		   top = dx_label_top + (gap * (dx_idx & 1));
+		}
       dx.post_render[dx_idx] = { top: top, ltop: top, x: x /* , f: f_base_label_Hz/1e3, ident: ident */ };
 		dx.last_f_base = f_base_label_Hz;
 
