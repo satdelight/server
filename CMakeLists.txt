@@ -138,6 +138,7 @@ SET(EXTENSIONS
     IBP_scan
     iframe
     IQ_display
+    JS8
     Loran_C
     NAVTEX
     noise_blank

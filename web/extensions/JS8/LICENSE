@@ -1,0 +1,15 @@
+JS8Call extension for Web-888/RaspSDR Kiwi server
+==================================================
+
+Browser-side JS8Call decoder extension. Decoding is done entirely in the
+browser using a pure-JavaScript Web Worker (dist/js8_worker.js) that
+implements the complete decode chain (Bluestein FFT, sync, LLR, LDPC,
+message unpack). There is no WASM dependency and no third-party decoder
+code is shipped.
+
+License
+-------
+* web/extensions/JS8/JS8.js, web/extensions/JS8/dist/js8_worker.js and
+  extensions/JS8/JS8.cpp (this project's own code) are distributed under
+  the same license as the RaspSDR Kiwi server (GPL-2.0, see the repository
+  LICENSE).
