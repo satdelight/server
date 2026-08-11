@@ -57,8 +57,10 @@ var js8 = {
 function JS8_main()
 {
 	ext_switch_to_client(js8.ext_name, js8.first_time, js8_recv);		// tell server to use us (again)
-	if (js8.first_time)
-		js8_controls_setup();
+	// (re)build the panel on every open: on the first open the panel content
+	// must be created, and after a close/reopen it must be re-created
+	// (extint_panel_show() replaces the controls container HTML each time).
+	js8_controls_setup();
 	js8.first_time = false;
 
 	if (!js8.worker) {
@@ -118,6 +120,7 @@ function js8_controls_setup()
 
 	ext_panel_show(controls_html, data_html, null);
 
+	time_display_setup('js8');
 	ext_set_data_height(js8.dataH);
 	ext_set_controls_width_height(js8.ctrlW, js8.ctrlH);
 }
@@ -268,4 +271,10 @@ function js8_status(s)
 	if (s) js8.status = s;
 	var el = w3_el('id-js8-status');
 	if (el) el.innerHTML = s;
+}
+
+// called by the admin interface to display configuration parameters
+function JS8_config_html()
+{
+	ext_config_html(js8, 'JS8', 'JS8Call', 'JS8Call configuration');
 }
