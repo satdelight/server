@@ -4183,6 +4183,36 @@ function spectrum_update(data)
       }
    }
 
+   // receiver passband indication on the RF spectrum display
+   if (spec.source == spec.RF) {
+      var demod = demodulators[0];
+      if (isDefined(demod) && demod.low_cut != demod.high_cut) {
+         // passband edges relative to the demodulated carrier frequency
+         var pb_lo_f = freq_car_Hz + demod.low_cut;
+         var pb_hi_f = freq_car_Hz + demod.high_cut;
+         // map to the visible spectrum range using the same freq->px mapping as the
+         // filter envelope (demod_envelope_draw -> scale_px_from_freq with
+         // get_visible_freq_range()), scaled to the spectrum canvas width
+         var gr = get_visible_freq_range();
+         var pb_lo_x = (pb_lo_f - gr.start) / gr.bw * spec.canvas.width;
+         var pb_hi_x = (pb_hi_f - gr.start) / gr.bw * spec.canvas.width;
+         // clip to the visible spectrum width
+         if (pb_lo_x < 0) pb_lo_x = 0;
+         if (pb_hi_x > spec.canvas.width) pb_hi_x = spec.canvas.width;
+         // enforce a minimum visible width so a narrow passband is not lost to sub-pixel rounding
+         if (pb_hi_x - pb_lo_x < 2) pb_hi_x = pb_lo_x + 2;
+         if (pb_hi_x <= spec.canvas.width) {
+            // translucent highlight over the passband
+            ctx.fillStyle = "rgba(255, 255, 0, 0.15)";
+            ctx.fillRect(Math.round(pb_lo_x), 0, Math.round(pb_hi_x) - Math.round(pb_lo_x), sh);
+            // passband edge markers
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(Math.round(pb_lo_x), 0, 1, sh);
+            ctx.fillRect(Math.round(pb_hi_x), 0, 1, sh);
+         }
+      }
+   }
+
    if (spec.switch_container) {
       w3_show_hide('id-spectrum-container', true);
       w3_show_hide('id-top-container', false);
@@ -8082,7 +8112,13 @@ function dx_label_render_cb(arr)
             lock_z = 0;
          }
 		}
-		var top = dx_label_top + (gap * (dx_idx & 1));    // stagger the labels vertically
+		// stagger the labels vertically
+		var top;
+		if (!eibi && cfg.dx_three_high) {
+		   top = 26 * (dx_idx % 3);
+		} else {
+		   top = dx_label_top + (gap * (dx_idx & 1));
+		}
       dx.post_render[dx_idx] = { top: top, ltop: top, x: x /* , f: f_base_label_Hz/1e3, ident: ident */ };
 		dx.last_f_base = f_base_label_Hz;
 
