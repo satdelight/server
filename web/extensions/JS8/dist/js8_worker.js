@@ -19,6 +19,11 @@
 // Speed modes: 0=Slow(30s) 1=Normal(15.6s) 2=Fast(10s) 3=Turbo(6s)
 // ============================================================
 
+// The Kiwi server appends a version-check footer ("kiwi_check_js_version.push(...)")
+// to every .js file it serves (web.cpp). In a Web Worker's isolated global scope
+// that variable does not exist, so declare it here to keep the footer from throwing.
+var kiwi_check_js_version = kiwi_check_js_version || [];
+
 var SAMPLE_RATE = 12000;
 
 // ---- LDPC tables (generated from kgoba/ft8_lib kFTX_LDPC_Nm) ----

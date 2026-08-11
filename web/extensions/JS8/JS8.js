@@ -18,7 +18,7 @@ var js8 = {
    first_time: true,
 
    dataH: 300,
-   ctrlW: 525,
+   ctrlW: 700,
    ctrlH: 120,
 
    modeId: 1,           // 0=Slow 1=Normal 2=Fast 3=Turbo
@@ -29,6 +29,21 @@ var js8 = {
 
    sfmt: 'w3-text-red w3-ext-retain-input-focus',
    mode_s: [ 'Slow (30 s)', 'Normal (15.6 s)', 'Fast (10 s)', 'Turbo (6 s)' ],
+
+   freq: 14078,         // current dial frequency (kHz), default 20 m
+   pb: { lo: 0, hi: 3000 },   // JS8Call signals occupy 300-3000 Hz above dial
+   saved_mode: null,
+   freqs: [
+      { n: '3.578 MHz (80 m)',  v: 3578 },
+      { n: '5.018 MHz (60 m)',  v: 5018 },
+      { n: '7.078 MHz (40 m)',  v: 7078 },
+      { n: '10.130 MHz (30 m)', v: 10130 },
+      { n: '14.078 MHz (20 m)', v: 14078 },
+      { n: '18.104 MHz (17 m)', v: 18104 },
+      { n: '21.078 MHz (15 m)', v: 21078 },
+      { n: '24.920 MHz (12 m)', v: 24920 },
+      { n: '28.078 MHz (10 m)', v: 28078 }
+   ],
 
    log_txt: '',
    status: '',
@@ -46,13 +61,17 @@ function JS8_main()
 		js8_controls_setup();
 	js8.first_time = false;
 
+	if (!js8.worker) {
+		js8.saved_mode = ext_get_mode();
+		js8_tune(js8.freq);
+	}
+
 	// receive the network-rate, post-decompression, real-mode samples
 	ext_register_audio_data_cb(js8_audio_data_cb);
 
-	if (!js8.worker) {
-		js8.pending_start = true;
-		js8_worker_start();
-	}
+	// NOTE: decoder is NOT auto-started. The user picks a mode and presses
+	// the Start button (js8_start_click). This keeps the browser/audio busy
+	// only while JS8Call is actually in use.
 }
 
 function js8_recv(data)
@@ -63,6 +82,9 @@ function js8_recv(data)
 function JS8_blur()
 {
 	js8_worker_stop();
+	w3_button_text('id-js8-start', 'Start');
+	if (js8.saved_mode)
+		ext_set_mode(js8.saved_mode);
 	ext_unregister_audio_data_cb(js8_audio_data_cb);
 }
 
@@ -87,6 +109,7 @@ function js8_controls_setup()
 				),
 
 				w3_inline('/w3-margin-between-16',
+					w3_select(js8.sfmt, 'Frequency', '', 'js8.freq', 4, js8.freqs.map(function(f) { return f.n; }), 'js8_freq_cb'),
 					w3_select(js8.sfmt, '', 'mode', 'js8.modeId', W3_SELECT_SHOW_TITLE, js8.mode_s, 'js8_mode_cb'),
 					w3_button_path('w3-button w3-tiny', 'id-js8-start', 'Start', 'js8_start_click')
 				)
@@ -99,8 +122,24 @@ function js8_controls_setup()
 	ext_set_controls_width_height(js8.ctrlW, js8.ctrlH);
 }
 
-function js8_mode_cb()
+function js8_freq_cb(path, idx, first)
 {
+	if (first) return;
+	js8_tune(js8.freqs[idx].v);
+}
+
+function js8_tune(f_kHz)
+{
+	js8.freq = f_kHz;
+	ext_set_mode('usb');
+	ext_tune(f_kHz, 'usb', ext_zoom.CUR, null, js8.pb.lo, js8.pb.hi);
+}
+
+function js8_mode_cb(path, idx, first)
+{
+	if (first) return;
+	js8.modeId = +idx;
+	w3_set_value(path, +idx);     // for benefit of direct callers
 	if (js8.worker && js8.running)
 		js8.worker.postMessage({ type: 'set-mode', mode: js8.modeId });
 }
@@ -109,7 +148,7 @@ function js8_start_click()
 {
 	if (js8.running) {
 		js8_worker_stop();
-		w3_text('id-js8-start', 'Start');
+		w3_button_text('id-js8-start', 'Start');
 		js8_status('Stopped.');
 	} else {
 		js8.pending_start = true;
@@ -139,7 +178,7 @@ function js8_worker_start()
 			if (js8.pending_start) {
 				js8.pending_start = false;
 				js8.worker.postMessage({ type: 'start', mode: js8.modeId, freqMin: 200, freqMax: 3000 });
-				w3_text('id-js8-start', 'Stop');
+				w3_button_text('id-js8-start', 'Stop');
 				js8_status('Buffering — '+ js8.mode_s[js8.modeId] +' mode…');
 			}
 			break;
