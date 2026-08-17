@@ -138,7 +138,7 @@ SET(EXTENSIONS
     IBP_scan
     iframe
     IQ_display
-    JS8
+    JS8Call
     Loran_C
     NAVTEX
     noise_blank
@@ -390,6 +390,7 @@ file(GLOB FILES_EMBED_MISC RELATIVE ${UPSTREAM_DIR}/web
     ${UPSTREAM_DIR}/web/extensions/FSK/FSK_freq_menus.cjson
     ${UPSTREAM_DIR}/web/extensions/NAVTEX/NAVTEX_freq_menus.cjson
     ${UPSTREAM_DIR}/web/extensions/HFDL/systable.backup.cjson
+    ${UPSTREAM_DIR}/web/extensions/JS8Call/dist/jsc_map.dat
 )
 
 set(FILES_EMBED_FILES ${FILES_EMBED_JS} ${FILES_EMBED_CSS} ${FILES_EMBED_HTML} ${FILES_EMBED_MISC})
